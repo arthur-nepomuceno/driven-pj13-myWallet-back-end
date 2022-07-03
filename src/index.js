@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import joi from 'joi';
-import bcrypt from "bcrypt";
-import {MongoClient} from "mongodb";
+import bcrypt from 'bcrypt';
+import {v4 as uuid} from 'uuid';
+import {MongoClient} from 'mongodb';
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ server.post('/sign-up', async (request, response) => {
     const body = request.body;
     
     //Schema
-    const regexName = /[a-zA-Z0-9]\ [a-zA-Z0-9]/;
+    const regexName = /[a-zA-Z0-9áàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]\ [a-zA-Z0-9áàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]/;
     const regexPassword = /[a-zA-Z0-9]{8,}/ 
     const validationSchema = joi.object({
         name: joi.string().pattern(regexName).required(),
@@ -76,4 +77,42 @@ server.post('/sign-up', async (request, response) => {
     }
 })
 
-server.listen(5000) 
+//Route
+server.post('/sign-in', async (request, response) => {
+    const body = request.body;
+    
+    //Schema
+    const regexPassword = /[a-zA-Z0-9]{8,}/ 
+    const validationSchema = joi.object({
+        email: joi.string().email().required(),
+        password: joi.string().pattern(regexPassword).required()
+    })
+    const validation = validationSchema.validate(body, {abortEarly: false});
+
+    //Controller
+    if(!validation.error){
+        try{
+            const validUser = await dbMyWallet.collection('users').findOne({email: body.email});
+            const checkPassword = bcrypt.compareSync(body.password, validUser.password);
+            if(validUser && checkPassword){
+                const token = uuid();
+                const userId = validUser._id;
+                await dbMyWallet.collection('sessions').insertOne({name: validUser.name, userId, token})
+                return response.status(200).send({name: validUser.name, email: validUser.email, token});
+            } else {
+                return response.status(409).send('Invalid email or password.')
+            }
+        } catch(error){
+            return response.status(409).send('Invalid email or password.')
+        }
+    } else {
+        return response.status(409).send('Invalid email or password.')
+    }
+})
+
+//Route
+server.post('/transactions', async (request, response) => {
+    response.send('post/transactions ONLINE')
+})
+
+server.listen(5000)
