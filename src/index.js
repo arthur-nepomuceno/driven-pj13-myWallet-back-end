@@ -204,8 +204,27 @@ server.delete('/transactions/:id', async (request, response) => {
 
 server.put('/transactions/:id', async (request, response) => {
     const authorization = request.headers.authorization;
+    const body = request.body;
+    const id = request.params.id;
     const token = authorization?.replace(/Bearer |'/g, '');
-    response.status(200).send(token)
+    
+    try {
+        const user = await dbMyWallet.collection('sessions').findOne({token});
+        const transaction = await dbMyWallet.collection('transactions').findOne({_id: new ObjectId(id)});
+        if(user.name === transaction.name){
+            await dbMyWallet.collection('transactions')
+                            .updateOne({_id: new ObjectId(id)}, 
+                                       {$set: {value: body.value, 
+                                               description: body.description}})
+            return response.status(200).send('Register updated successfully.');
+        } else {
+            return response.status(401);
+        }
+
+    } catch(error){
+        return response.status(500).send('Server error :(.')
+    }
+
 })
 
 server.listen(5000)
