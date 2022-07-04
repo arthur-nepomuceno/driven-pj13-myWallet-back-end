@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import {MongoClient} from 'mongodb';
+import userRouter from './routers/userRouter.js';
+import transactionsRouter from './routers/transactionRouter.js';
 import { signUp, signIn} from './controllers/userControllers.js';
 import { postTransaction, getTransaction, deleteTransaction, updateTransaction} from './controllers/transactionControllers.js';
 
@@ -19,17 +21,20 @@ mongoClient.connect().then(() => {
     dbMyWallet = mongoClient.db("my-wallet-data-base");
 })
 
-server.post('/sign-up', signUp);
+server.use(userRouter);
+server.use(transactionsRouter);
 
-server.post('/sign-in', signIn);
+// server.post('/sign-up', signUp);
 
-server.post('/transactions', postTransaction);
+// server.post('/sign-in', signIn);
 
-server.get('/transactions', getTransaction);
+// server.post('/transactions', postTransaction);
 
-server.delete('/transactions/:id', deleteTransaction);
+// server.get('/transactions', getTransaction);
 
-server.put('/transactions/:id', updateTransaction);
+// server.delete('/transactions/:id', deleteTransaction);
+
+// server.put('/transactions/:id', updateTransaction);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT)

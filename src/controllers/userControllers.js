@@ -16,7 +16,6 @@ mongoClient.connect().then(() => {
 export async function signUp(request, response){
     const body = request.body;
     
-    //Schema
     const regexName = /[a-zA-Z0-9áàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]\ [a-zA-Z0-9áàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]/;
     const regexPassword = /[a-zA-Z0-9]{8,}/ 
     const validationSchema = joi.object({
@@ -26,7 +25,6 @@ export async function signUp(request, response){
     })
     const validation = validationSchema.validate(body, {abortEarly: false});
 
-    //Controller
     if(!validation.error){
         const encryptPassword = bcrypt.hashSync(body.password, 11);
         const newUser = {
@@ -82,7 +80,6 @@ export async function signIn (request, response){
     })
     const validation = validationSchema.validate(body, {abortEarly: false});
 
-    //Controller
     if(!validation.error){
         try{
             const validUser = await dbMyWallet.collection('users').findOne({email: body.email});

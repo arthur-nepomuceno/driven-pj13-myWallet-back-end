@@ -27,7 +27,6 @@ export async function postTransaction(request, response){
     });
     const validation = transactionSchema.validate(body, {abortEarly: false});
     
-    //Controller
     if(!validation.error){
         try {
             const user = await dbMyWallet.collection('sessions').findOne({token});
@@ -56,7 +55,6 @@ export async function getTransaction(request, response){
     const authorization = request.headers.authorization;
     const token = authorization?.replace(/Bearer |'/g, '');
     
-    //Controller
     try{
         const user = await dbMyWallet.collection('sessions').findOne({token});
         const userId = user.userId;
