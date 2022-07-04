@@ -1,14 +1,12 @@
 import dotenv from 'dotenv';
-import joi from 'joi';
 import dayjs from 'dayjs';
 import {MongoClient, ObjectId} from 'mongodb';
-
 dotenv.config();
 
 let dbMyWallet;
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 mongoClient.connect().then(() => {
-    dbMyWallet = mongoClient.db("my-wallet-data-base");
+    dbMyWallet = mongoClient.db(process.env.MONGO_DATABASE);
 })
 
 export async function postTransaction(request, response){
@@ -17,37 +15,14 @@ export async function postTransaction(request, response){
     const token = authorization?.replace(/Bearer |'/g, '');
     const date = dayjs().format('DD/MM');
     
-    //Schema
-    const regexMoney = /[0-9]\.[0-9]{2}/;
-    const regexDescription = /[a-zA-Z0-9áàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]{3,}/
-    const transactionSchema = joi.object({
-        value: joi.string().pattern(regexMoney).required(),
-        description: joi.string().pattern(regexDescription).required(),
-        type: joi.any().valid('deposit', 'withdraw').required()
-    });
-    const validation = transactionSchema.validate(body, {abortEarly: false});
-    
-    if(!validation.error){
-        try {
-            const user = await dbMyWallet.collection('sessions').findOne({token});
-            const newTransaction = {userId: user.userId, name: user.name, date, ...body};
-            const register = await dbMyWallet.collection('transactions').insertOne(newTransaction);
-            const newTransactionData = {id: register.insertedId, name: user.name, date, ...body}
-            return response.status(200).send(newTransactionData);
-        } catch(error){
-            return response.status(500).send('Server error :(.')
-        }
-    } else {
-        const errorData = validation.error.details;
-        errorData.map(error => {
-            if(error.context.key === 'value'){
-                return response.status(401).send('Money value must be like "...xx.xx"');
-            } else if(error.context.key === 'description'){
-                return response.status(401).send('Description must be a string with at leat 4 characters.');
-            } else if(error.context.key === 'type'){
-                return response.status(401).send('Type must be either "deposit" or "withdraw".');
-            }
-        })
+    try {
+        const user = await dbMyWallet.collection('sessions').findOne({token});
+        const newTransaction = {userId: user.userId, name: user.name, date, ...body};
+        const register = await dbMyWallet.collection('transactions').insertOne(newTransaction);
+        const newTransactionData = {id: register.insertedId, name: user.name, date, ...body}
+        return response.status(200).send(newTransactionData);
+    } catch(error){
+        return response.status(500).send('Server error :(.')
     }
 }
 
@@ -79,7 +54,6 @@ export async function deleteTransaction(request, response){
     const token = authorization?.replace(/Bearer |'/g, '');
     const id = request.params.id;
 
-    //Controller
     try {
         const user = await dbMyWallet.collection('sessions').findOne({token});
         const userName = user.name;
