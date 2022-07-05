@@ -61,7 +61,21 @@ export async function deleteTransaction(request, response){
         const transactionName = transaction.name;
 
         if(userName === transactionName){
-            await dbMyWallet.collection('transactions').deleteOne({_id: new ObjectId(id)})
+            await dbMyWallet.collection('transactions').deleteOne({_id: new ObjectId(id)});
+            const userId = user.userId;
+            const userTransactions = await dbMyWallet.collection('transactions').find({userId}).toArray();
+            if(userTransactions.length > 0){
+                const transactionsList = [];
+                userTransactions.map(t => {
+                    delete t.userId;
+                    transactionsList.push(t);
+                })
+            return response.status(200).send(transactionsList);
+        } else {
+            return response.status(200).send(userTransactions);
+        }
+
+
             return response.status(200).send('Register was deleted successfully.')
         } else {
             return response.status(401);
